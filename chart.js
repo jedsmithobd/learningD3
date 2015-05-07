@@ -15,9 +15,13 @@ var xAxis = d3.svg.axis().scale(x).orient("bottom");
 
 var yAxis = d3.svg.axis().scale(y).orient("left");
 
-var line = d3.svg.line()
+var lineHigh = d3.svg.line()
     .x(function(d) { return x(d.t * 1000); })
     .y(function(d) { return y(d.p[1]); });
+
+var lineLow = d3.svg.line()
+    .x(function(d) { return x(d.t * 1000); })
+    .y(function(d) { return y(d.p[2]); });
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -27,7 +31,8 @@ var svg = d3.select("body").append("svg")
 
 d3.json("aapl.json", function(error, data) {
     x.domain(d3.extent(data, function(d) { return d.t * 1000; }));
-    y.domain(d3.extent(data, function(d) { return d.p[1]; }));
+    //y.domain(d3.extent(data, function(d) { return d.p[1]; }));
+    y.domain([d3.min(data, function(d) { return d.p[2] - d.p[3] * 0.02; }), d3.max(data, function(d) { return d.p[1] + d.p[3] * 0.02; })]);
 
     svg.append("g")
         .attr("class", "x axis")
@@ -46,14 +51,21 @@ d3.json("aapl.json", function(error, data) {
 
     svg.append("path")
         .datum(data)
-        .attr("class", "line")
-        .attr("d", line);
+        .attr("class", "line line-high")
+        .attr("d", lineHigh);
+
+    svg.append("path")
+        .datum(data)
+        .attr("class", "line line-low")
+        .attr("d", lineLow);
 
     d3.json("predictions.json", function(error, data) {
         var circleGroup = svg.append('g').selectAll('g').data(data);
         circleGroup.enter().append('g').append('circle');
-        circleGroup.selectAll('circle').attr('cx', function(d, i) { return d.params.t * 1000})
-                   .attr('r', function(d, i) { return 3});
+        circleGroup.selectAll('circle').attr('cx', function(d, i) { return x(d.params.t * 1000)})
+                   .attr('cy', function(d, i) { return y(d.data.p.g)})
+                   .attr('r', function(d, i) { return 3})
+                   .attr('class', 'circle');
         console.log(circleGroup);
     });
 });
