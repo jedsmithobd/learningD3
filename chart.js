@@ -7,7 +7,7 @@ var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
-var x = d3.time.scale().range([0, width]);
+var x = d3.scale.ordinal().range([0, width]);
 
 var y = d3.scale.linear().range([height, 0]);
 
@@ -30,9 +30,23 @@ var svg = d3.select("body").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 d3.json("aapl.json", function(error, data) {
-    x.domain(d3.extent(data, function(d) { return d.t * 1000; }));
+    var yMinArr = [];
+    var yMaxArr = [];
+    var xDomains = [];
+    for (var i = 0; i < data.length; i++) {
+        // Get Y Domains
+        yMinArr.push(d3.min(data[i], function(d) { return d.p[2] - d.p[3] * 0.02; }));
+        yMaxArr.push(d3.max(data[i], function(d) { return d.p[1] + d.p[3] * 0.02; }));
+
+        // Get X Domain Values
+        xDomains.push(moment.unix(data[i][0].t).format('L'));
+    }
+
+    console.log(xDomains);
+    x.domain(xDomains);
     //y.domain(d3.extent(data, function(d) { return d.p[1]; }));
-    y.domain([d3.min(data, function(d) { return d.p[2] - d.p[3] * 0.02; }), d3.max(data, function(d) { return d.p[1] + d.p[3] * 0.02; })]);
+    //y.domain([d3.min(data, function(d) { return d.p[2] - d.p[3] * 0.02; }), d3.max(data, function(d) { return d.p[1] + d.p[3] * 0.02; })]);
+    y.domain([Math.min.apply(null, yMinArr), Math.max.apply(null, yMinArr)]);
 
     svg.append("g")
         .attr("class", "x axis")
