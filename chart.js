@@ -14,7 +14,10 @@ var x = d3.scale.ordinal().rangePoints([0, width]);
 
 var y = d3.scale.linear().range([height, 0]);
 
-var xAxis = d3.svg.axis().scale(x).orient("bottom");
+var xAxis = d3.svg.axis().scale(x).orient("bottom").tickSize(-height).tickFormat(function(unix) {
+    var time = new Date(unix * 1000);
+    return d3.time.format('%x')(time);
+});
 
 var yAxis = d3.svg.axis().scale(y).orient("left");
 
@@ -37,9 +40,12 @@ d3.json("aapl.json", function(error, data) {
     var yMaxArr = [];
     var xDomains = [];
     var flattedData = [];
+    var ticks = [];
     //var earliestTime = data[data.length - 1][data[data.length - 1].length].t;
     for (var i = 0; i < data.length; i++) {
         var innerData = data[data.length - i - 1];
+
+        ticks.push(Math.floor(innerData[innerData.length - 1].t/60) * 60);
 
         // Get Y Domains
         yMinArr.push(d3.min(data[i], function(d) { return d.p[2] - d.p[3] * 0.02; }));
@@ -58,6 +64,9 @@ d3.json("aapl.json", function(error, data) {
 
     console.log(xDomains);
     console.log(flattedData);
+    console.log(ticks);
+
+    xAxis.tickValues(ticks);
     x.domain(xDomains);
     //y.domain(d3.extent(data, function(d) { return d.p[1]; }));
     //y.domain([d3.min(data, function(d) { return d.p[2] - d.p[3] * 0.02; }), d3.max(data, function(d) { return d.p[1] + d.p[3] * 0.02; })]);
@@ -101,6 +110,14 @@ d3.json("aapl.json", function(error, data) {
         circleGroup.selectAll('circle').attr('cx', function(d, i) { return x(d.params.t)})
                    .attr('cy', function(d, i) { return y(d.data.p.g)})
                    .attr('r', function(d, i) { return 3})
-                   .attr('class', 'circle');
+                   .attr('class', 'circle')
+                   .attr('class', function(d, i) {
+                        if (d.data.r === true) {
+                            return 'realized';
+                        } else if (d.data.r === false) {
+                            return 'unrealized';
+                        } else {
+                            return 'waiting';
+                        }});
     });
 });
